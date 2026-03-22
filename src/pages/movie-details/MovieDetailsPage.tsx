@@ -11,20 +11,6 @@ function formatRating(rating: number | null) {
   return rating === null ? 'Нет оценки' : `KP ${rating.toFixed(1)}`
 }
 
-function formatReleaseDate(releaseDate: string | null) {
-  if (!releaseDate) {
-    return 'Дата выхода не указана'
-  }
-
-  const [year, month, day] = releaseDate.split('-')
-
-  if (!year || !month || !day) {
-    return releaseDate
-  }
-
-  return `${day}.${month}.${year}`
-}
-
 function formatDuration(duration: number | null) {
   return duration === null ? 'Длительность не указана' : `${duration} мин`
 }
@@ -57,7 +43,7 @@ export function MovieDetailsPage() {
         <div className="catalog-state">
           <Spinner size="m" />
           <h2 className="catalog-state__title">Загружаем информацию о фильме</h2>
-          <Text>Сейчас загрузим постер, описание, рейтинг и дату выхода.</Text>
+          <Text>Сейчас загрузим постер, описание, рейтинг и основные факты.</Text>
         </div>
       </section>
     )
@@ -112,9 +98,6 @@ export function MovieDetailsPage() {
             <div className="movie-card__chips">
               <span className="movie-chip">{formatRating(movie.rating)}</span>
               <span className="movie-chip movie-chip--muted">
-                {formatReleaseDate(movie.releaseDate)}
-              </span>
-              <span className="movie-chip movie-chip--muted">
                 {movie.year ?? 'Год не указан'}
               </span>
             </div>
@@ -123,7 +106,9 @@ export function MovieDetailsPage() {
               <div className="details-page__fact">
                 <span className="details-page__fact-label">Жанры</span>
                 <Text>
-                  {movie.genres.length > 0 ? movie.genres.join(' • ') : 'Жанры не указаны'}
+                  {movie.genres.length > 0
+                    ? movie.genres.join(' • ')
+                    : 'Жанры не указаны'}
                 </Text>
               </div>
 
@@ -149,11 +134,19 @@ export function MovieDetailsPage() {
 
             <div className="details-page__actions">
               {alreadyInFavorites ? (
-                <Button mode="secondary" size="m" onClick={() => removeFavorite(movie.id)}>
+                <Button
+                  mode="secondary"
+                  size="m"
+                  onClick={() => removeFavorite(movie.id)}
+                >
                   Удалить из избранного
                 </Button>
               ) : (
-                <Button mode="primary" size="m" onClick={() => setIsConfirmModalOpen(true)}>
+                <Button
+                  mode="primary"
+                  size="m"
+                  onClick={() => setIsConfirmModalOpen(true)}
+                >
                   Добавить в избранное
                 </Button>
               )}
@@ -166,7 +159,9 @@ export function MovieDetailsPage() {
                 }`}
                 onClick={() => toggleMovie(movie)}
               >
-                {alreadyInComparison ? 'Убрать из сравнения' : 'Добавить в сравнение'}
+                {alreadyInComparison
+                  ? 'Убрать из сравнения'
+                  : 'Добавить в сравнение'}
               </Button>
 
               {movie.webUrl ? (
