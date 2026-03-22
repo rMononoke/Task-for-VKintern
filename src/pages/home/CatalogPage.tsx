@@ -49,7 +49,6 @@ export function CatalogPage() {
   } = useMovieGenreOptions()
   const {
     movies,
-    loadedMoviesCount,
     isPending,
     isError,
     error,
@@ -106,12 +105,11 @@ export function CatalogPage() {
           </div>
 
           <div className="catalog-summary">
-            <span className="catalog-summary__item">Показано: {movies.length}</span>
             <span className="catalog-summary__item">
-              Подготовлено: {loadedMoviesCount}
+              Фильмов показано: {movies.length}
             </span>
             <span className="catalog-summary__item">
-              Шаг выдачи: {CATALOG_MOVIES_STEP}
+              Еще загрузит: {CATALOG_MOVIES_STEP}
             </span>
           </div>
         </div>

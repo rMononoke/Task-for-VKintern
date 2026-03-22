@@ -4,7 +4,7 @@ import type {
 } from '../../../entities/movie/model/types.ts'
 
 export const CATALOG_GRID_COLUMNS = 4
-export const CATALOG_MOVIES_STEP = CATALOG_GRID_COLUMNS * 6
+export const CATALOG_MOVIES_STEP = 50
 export const CATALOG_MIN_READY_MOVIES = CATALOG_MOVIES_STEP
 
 type ShouldPrefetchCatalogMoviesParams = {
