@@ -63,6 +63,8 @@ export function CatalogPage() {
     comparisonMovies,
     isPending: isComparisonPending,
   } = useComparisonMovieDetails(selectedMovies)
+  const isCatalogSearching =
+    !isError && movies.length === 0 && (isPending || isFetchingNextPage)
 
   const activeFiltersCount = [
     filterValues.genres.length > 0,
@@ -124,7 +126,7 @@ export function CatalogPage() {
       />
 
       <section className="surface-section">
-        {isPending ? <MovieCardsSkeleton /> : null}
+        {isCatalogSearching ? <MovieCardsSkeleton /> : null}
 
         {isError ? (
           <div className="catalog-state">
@@ -150,7 +152,7 @@ export function CatalogPage() {
           </div>
         ) : null}
 
-        {!isPending && !isError ? (
+        {!isCatalogSearching && !isError ? (
           <>
             {movies.length > 0 ? (
               <div className="movie-grid">

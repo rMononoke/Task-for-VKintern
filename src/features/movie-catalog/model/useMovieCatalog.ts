@@ -1,5 +1,5 @@
 import { useInfiniteQuery } from '@tanstack/react-query'
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 
 import { movieQueryKeys } from '@/entities/movie/api/queryKeys'
 import { fetchMovies } from '@/entities/movie/api/movieApi'
@@ -40,8 +40,25 @@ export function useMovieCatalog(filters: MovieFilters = DEFAULT_MOVIE_FILTERS) {
     getNextPageParam: (lastPage) => lastPage.nextCursor,
   })
 
+  const movies = query.data?.pages.flatMap((page) => page.items) ?? []
+  const {
+    fetchNextPage,
+    hasNextPage,
+    isError,
+    isFetchingNextPage,
+    isPending,
+  } = query
+
+  useEffect(() => {
+    if (isPending || isError || isFetchingNextPage || !hasNextPage || movies.length > 0) {
+      return
+    }
+
+    void fetchNextPage()
+  }, [fetchNextPage, hasNextPage, isError, isFetchingNextPage, isPending, movies.length])
+
   return {
     ...query,
-    movies: query.data?.pages.flatMap((page) => page.items) ?? [],
+    movies,
   }
 }

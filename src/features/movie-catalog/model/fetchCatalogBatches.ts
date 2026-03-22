@@ -16,11 +16,13 @@ type CatalogBatchFetcherOptions = {
   batchSize?: number
   explorationOrders?: MovieFilters['order'][]
   maxApiPages?: number
+  maxSegmentsPerBatch?: number
   saturationTotal?: number
 }
 
 const DEFAULT_BATCH_SIZE = 50
 const DEFAULT_MAX_API_PAGES = 5
+const DEFAULT_MAX_SEGMENTS_PER_BATCH = 4
 const DEFAULT_SATURATION_TOTAL = 100
 const DEFAULT_EXPLORATION_ORDERS: MovieFilters['order'][] = [
   'NUM_VOTE',
@@ -97,6 +99,8 @@ export function createCatalogBatchFetcher(
 ) {
   const batchSize = options.batchSize ?? DEFAULT_BATCH_SIZE
   const maxApiPages = options.maxApiPages ?? DEFAULT_MAX_API_PAGES
+  const maxSegmentsPerBatch =
+    options.maxSegmentsPerBatch ?? DEFAULT_MAX_SEGMENTS_PER_BATCH
   const saturationTotal = options.saturationTotal ?? DEFAULT_SATURATION_TOTAL
   const explorationOrders = Array.from(
     new Set([
@@ -166,13 +170,21 @@ export function createCatalogBatchFetcher(
     }
   }
 
-  async function fillBuffer() {
-    while (bufferedItems.length < batchSize && pendingSegments.length > 0) {
+  async function fillBuffer(targetSize: number) {
+    let processedSegments = 0
+
+    while (
+      bufferedItems.length < targetSize &&
+      pendingSegments.length > 0 &&
+      processedSegments < maxSegmentsPerBatch
+    ) {
       const nextSegment = pendingSegments.shift()
 
       if (!nextSegment) {
         break
       }
+
+      processedSegments += 1
 
       const segmentResult = await collectSegment(nextSegment)
 
@@ -194,7 +206,9 @@ export function createCatalogBatchFetcher(
   return async function fetchCatalogBatch(
     cursor: CatalogBatchCursor = INITIAL_CATALOG_BATCH_CURSOR,
   ): Promise<CatalogBatchPage> {
-    await fillBuffer()
+    const targetSize = cursor.index === 0 ? 1 : batchSize
+
+    await fillBuffer(targetSize)
 
     const items = bufferedItems.splice(0, batchSize)
     const hasMore = bufferedItems.length > 0 || pendingSegments.length > 0
