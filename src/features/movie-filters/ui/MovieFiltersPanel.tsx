@@ -15,7 +15,7 @@ type MovieFiltersPanelProps = {
   genreOptions: MovieFilterOption[]
   isGenreOptionsLoading: boolean
   values: MovieCatalogFilterValues
-  onToggleGenre: (genreId: number) => void
+  onToggleGenre: (genreId: string) => void
   onRatingFromChange: (ratingFrom: number) => void
   onRatingToChange: (ratingTo: number) => void
   onYearFromChange: (yearFrom: number) => void
@@ -143,7 +143,8 @@ export function MovieFiltersPanel({
         <div className="filters-panel__copy">
           <p className="surface-section__eyebrow">Фильтры</p>
           <Text>
-            Здесь вы можете указать интересующие фас жанры, год выпуска и рейтинг
+            Здесь можно выбрать несколько жанров одновременно, а также сузить
+            результаты по году выхода и рейтингу.
           </Text>
         </div>
 
@@ -171,7 +172,7 @@ export function MovieFiltersPanel({
           <div className="filter-group">
             <div className="filter-group__label-row">
               <span className="filter-group__label">Жанры</span>
-              <Text>Можно выбрать несколько</Text>
+              <Text>Можно выбрать несколько значений сразу</Text>
             </div>
 
             {isGenreOptionsLoading ? (

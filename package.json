@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "node --test --experimental-strip-types src/entities/movie/api/poiskkinoAdapter.test.ts src/features/movie-filters/model/searchParams.test.ts src/features/movie-catalog/model/catalogMovies.test.ts src/shared/lib/useInfiniteScrollTrigger.test.ts"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.91.0",

@@ -2,19 +2,51 @@ import axios from 'axios'
 
 import { appEnv } from '@/shared/api/env'
 
+function serializeApiParams(
+  params: Record<
+    string,
+    boolean | number | string | Array<boolean | number | string> | undefined
+  >,
+) {
+  const searchParams = new URLSearchParams()
+
+  for (const [key, value] of Object.entries(params)) {
+    if (value === undefined) {
+      continue
+    }
+
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        searchParams.append(key, String(item))
+      }
+
+      continue
+    }
+
+    searchParams.append(key, String(value))
+  }
+
+  return searchParams.toString()
+}
+
 export function getApiErrorMessage(error: unknown) {
   if (axios.isAxiosError(error)) {
     const status = error.response?.status
 
-    if (status === 402) {
-      return 'Дневной лимит запросов Kinopoisk API исчерпан. Укажите новый API-ключ.'
+    if (status === 401) {
+      return 'Ключ PoiskKino API не принят. Проверьте значение в `.env.local`.'
+    }
+
+    if (status === 403) {
+      return 'Суточный лимит запросов PoiskKino API исчерпан. Дождитесь сброса лимита или используйте другой ключ.'
     }
 
     if (status === 429) {
-      return 'Слишком много запросов к Kinopoisk API. Подождите немного и повторите попытку.'
+      return 'PoiskKino API временно ограничил частоту запросов. Попробуйте повторить попытку чуть позже.'
     }
 
-    const responseMessage = error.response?.data?.message
+    const responseMessage =
+      error.response?.data?.message ?? error.response?.data?.error
 
     if (typeof responseMessage === 'string' && responseMessage.trim() !== '') {
       return responseMessage
@@ -25,7 +57,7 @@ export function getApiErrorMessage(error: unknown) {
     return error.message
   }
 
-  return 'Не удалось выполнить запрос к Kinopoisk API.'
+  return 'Не удалось выполнить запрос к PoiskKino API.'
 }
 
 export const apiClient = axios.create({
@@ -34,6 +66,9 @@ export const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
     'X-API-KEY': appEnv.apiKey,
+  },
+  paramsSerializer: {
+    serialize: serializeApiParams,
   },
 })
 

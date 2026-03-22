@@ -4,7 +4,7 @@ const MIN_RATING = 0
 const MAX_RATING = 10
 
 export type MovieCatalogFilterValues = {
-  genres: number[]
+  genres: string[]
   ratingFrom: number
   ratingTo: number
   yearFrom: number
@@ -32,10 +32,10 @@ function normalizeGenres(value: string | null) {
     new Set(
       value
         .split(',')
-        .map((item) => Number(item))
-        .filter((item) => Number.isInteger(item) && item > 0),
+        .map((item) => item.trim())
+        .filter((item) => item !== ''),
     ),
-  ).sort((first, second) => first - second)
+  ).sort((first, second) => first.localeCompare(second, 'ru'))
 }
 
 function parseNumber(

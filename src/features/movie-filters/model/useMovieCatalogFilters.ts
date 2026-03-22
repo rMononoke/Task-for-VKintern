@@ -26,7 +26,7 @@ export function useMovieCatalogFilters() {
       ...filterValues,
       page: 1,
     } satisfies MovieFilters,
-    toggleGenre(genreId: number) {
+    toggleGenre(genreId: string) {
       const nextGenres = filterValues.genres.includes(genreId)
         ? filterValues.genres.filter((currentGenreId) => currentGenreId !== genreId)
         : [...filterValues.genres, genreId]

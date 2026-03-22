@@ -1,46 +1,63 @@
 import { useInfiniteQuery } from '@tanstack/react-query'
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
-import { movieQueryKeys } from '@/entities/movie/api/queryKeys'
 import { fetchMovies } from '@/entities/movie/api/movieApi'
+import { movieQueryKeys } from '@/entities/movie/api/queryKeys'
 import { DEFAULT_MOVIE_FILTERS } from '@/entities/movie/model/constants'
 import type { MovieFilters } from '@/entities/movie/model/types'
 import {
-  createCatalogBatchFetcher,
-  INITIAL_CATALOG_BATCH_CURSOR,
-} from '@/features/movie-catalog/model/fetchCatalogBatches'
+  CATALOG_MIN_READY_MOVIES,
+  CATALOG_MOVIES_STEP,
+  collectCatalogMovies,
+  getNextVisibleMoviesCount,
+  shouldPrefetchCatalogMovies,
+} from '@/features/movie-catalog/model/catalogMovies'
 
-export function serializeMovieFilters(filters: MovieFilters) {
-  return JSON.stringify(filters)
+export function serializeMovieCatalogQuery(filters: MovieFilters) {
+  return JSON.stringify({
+    ...filters,
+    genres: [...filters.genres].sort((first, second) =>
+      first.localeCompare(second, 'ru'),
+    ),
+  } satisfies MovieFilters)
 }
 
-function deserializeMovieFilters(serializedFilters: string): MovieFilters {
-  return JSON.parse(serializedFilters) as MovieFilters
+function deserializeMovieCatalogQuery(serializedQueryState: string) {
+  return JSON.parse(serializedQueryState) as MovieFilters
 }
 
 export function useMovieCatalog(filters: MovieFilters = DEFAULT_MOVIE_FILTERS) {
-  const serializedFilters = serializeMovieFilters(filters)
-  const stableFilters = useMemo(
-    () => deserializeMovieFilters(serializedFilters),
-    [serializedFilters],
+  const serializedQueryState = serializeMovieCatalogQuery(filters)
+  const stableQueryState = useMemo(
+    () => deserializeMovieCatalogQuery(serializedQueryState),
+    [serializedQueryState],
   )
-  const batchFetcher = useMemo(
-    () =>
-      createCatalogBatchFetcher(
-        (requestFilters) => fetchMovies(undefined, requestFilters),
-        stableFilters,
-      ),
-    [stableFilters],
-  )
+  const [catalogViewportState, setCatalogViewportState] = useState(() => ({
+    queryState: serializedQueryState,
+    visibleMoviesCount: CATALOG_MOVIES_STEP,
+  }))
+  const visibleMoviesCount =
+    catalogViewportState.queryState === serializedQueryState
+      ? catalogViewportState.visibleMoviesCount
+      : CATALOG_MOVIES_STEP
 
   const query = useInfiniteQuery({
-    queryKey: movieQueryKeys.list(serializedFilters),
-    initialPageParam: INITIAL_CATALOG_BATCH_CURSOR,
-    queryFn: ({ pageParam }) => batchFetcher(pageParam),
-    getNextPageParam: (lastPage) => lastPage.nextCursor,
+    queryKey: movieQueryKeys.list(serializedQueryState),
+    initialPageParam: null as string | null,
+    queryFn: ({ pageParam }) =>
+      fetchMovies(undefined, stableQueryState, pageParam),
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
   })
 
-  const movies = query.data?.pages.flatMap((page) => page.items) ?? []
+  const allMovies = useMemo(
+    () =>
+      collectCatalogMovies(query.data?.pages ?? [], stableQueryState.genres),
+    [query.data?.pages, stableQueryState.genres],
+  )
+  const movies = useMemo(
+    () => allMovies.slice(0, visibleMoviesCount),
+    [allMovies, visibleMoviesCount],
+  )
   const {
     fetchNextPage,
     hasNextPage,
@@ -48,17 +65,68 @@ export function useMovieCatalog(filters: MovieFilters = DEFAULT_MOVIE_FILTERS) {
     isFetchingNextPage,
     isPending,
   } = query
+  const canRevealMore = visibleMoviesCount < allMovies.length
+  const canLoadMore = canRevealMore || Boolean(hasNextPage)
 
   useEffect(() => {
-    if (isPending || isError || isFetchingNextPage || !hasNextPage || movies.length > 0) {
+    if (
+      isError ||
+      !shouldPrefetchCatalogMovies({
+        loadedMoviesCount: allMovies.length,
+        minimumMoviesCount: Math.max(
+          CATALOG_MIN_READY_MOVIES,
+          visibleMoviesCount,
+        ),
+        hasNextPage: Boolean(hasNextPage),
+        isPending,
+        isFetchingNextPage,
+      })
+    ) {
       return
     }
 
     void fetchNextPage()
-  }, [fetchNextPage, hasNextPage, isError, isFetchingNextPage, isPending, movies.length])
+  }, [
+    allMovies.length,
+    fetchNextPage,
+    hasNextPage,
+    isError,
+    isFetchingNextPage,
+    isPending,
+    visibleMoviesCount,
+  ])
+
+  async function loadMore() {
+    if (canRevealMore) {
+      setCatalogViewportState((currentCatalogViewportState) => {
+        const currentVisibleMoviesCount =
+          currentCatalogViewportState.queryState === serializedQueryState
+            ? currentCatalogViewportState.visibleMoviesCount
+            : CATALOG_MOVIES_STEP
+
+        return {
+          queryState: serializedQueryState,
+          visibleMoviesCount: getNextVisibleMoviesCount(
+            currentVisibleMoviesCount,
+            allMovies.length,
+          ),
+        }
+      })
+      return
+    }
+
+    if (!hasNextPage || isFetchingNextPage) {
+      return
+    }
+
+    await fetchNextPage()
+  }
 
   return {
     ...query,
     movies,
+    loadedMoviesCount: allMovies.length,
+    hasNextPage: canLoadMore,
+    fetchNextPage: loadMore,
   }
 }

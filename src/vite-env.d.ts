@@ -2,6 +2,8 @@
 
 interface ImportMetaEnv {
   readonly VITE_APP_TITLE?: string
+  readonly VITE_POISKKINO_API_BASE_URL?: string
+  readonly VITE_POISKKINO_API_KEY?: string
   readonly VITE_KINOPOISK_API_BASE_URL?: string
   readonly VITE_KINOPOISK_API_KEY?: string
 }

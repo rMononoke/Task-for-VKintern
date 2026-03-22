@@ -1,5 +1,9 @@
 import { Button, Spinner, Text, Title } from '@vkontakte/vkui'
 
+import {
+  CATALOG_GRID_COLUMNS,
+  CATALOG_MOVIES_STEP,
+} from '@/features/movie-catalog/model/catalogMovies'
 import { MoviePreviewCard } from '@/entities/movie/ui/MoviePreviewCard'
 import { useComparison } from '@/features/comparison/model/useComparison'
 import { useComparisonMovieDetails } from '@/features/comparison/model/useComparisonMovieDetails'
@@ -14,7 +18,7 @@ import { useInfiniteScrollTrigger } from '@/shared/lib/useInfiniteScrollTrigger'
 function MovieCardsSkeleton() {
   return (
     <div className="movie-grid" aria-hidden="true">
-      {Array.from({ length: 10 }, (_, index) => (
+      {Array.from({ length: CATALOG_GRID_COLUMNS * 3 }, (_, index) => (
         <div key={index} className="movie-card movie-card--skeleton">
           <div className="movie-card__poster movie-card__poster--skeleton" />
           <div className="movie-card__content">
@@ -45,6 +49,7 @@ export function CatalogPage() {
   } = useMovieGenreOptions()
   const {
     movies,
+    loadedMoviesCount,
     isPending,
     isError,
     error,
@@ -77,6 +82,7 @@ export function CatalogPage() {
   const sentinelRef = useInfiniteScrollTrigger({
     canLoadMore: Boolean(hasNextPage),
     isLoading: isPending || isFetchingNextPage,
+    watchValue: movies.length,
     onLoadMore: () => {
       void fetchNextPage()
     },
@@ -94,13 +100,19 @@ export function CatalogPage() {
               </Title>
             </h2>
             <Text>
-              Здесь вы можете найти информацию о всех интересующих вас фильмах
+              Здесь можно найти информацию о фильмах по жанрам, рейтингу и году
+              выхода.
             </Text>
           </div>
 
           <div className="catalog-summary">
-            <span className="catalog-summary__item">Загружено: {movies.length}</span>
-            <span className="catalog-summary__item">Шаг подгрузки: 50</span>
+            <span className="catalog-summary__item">Показано: {movies.length}</span>
+            <span className="catalog-summary__item">
+              Подготовлено: {loadedMoviesCount}
+            </span>
+            <span className="catalog-summary__item">
+              Шаг выдачи: {CATALOG_MOVIES_STEP}
+            </span>
           </div>
         </div>
 
@@ -189,7 +201,7 @@ export function CatalogPage() {
                     Фильмы не найдены
                   </Title>
                 </h3>
-                <Text>Попробуйте обновить данные или изменить параметры поиска.</Text>
+                <Text>Попробуйте изменить параметры поиска.</Text>
               </div>
             )}
 
@@ -197,17 +209,20 @@ export function CatalogPage() {
               <>
                 <div ref={sentinelRef} className="catalog-sentinel" aria-hidden="true" />
 
-            <div className="catalog-footer">
-              {isFetchingNextPage ? (
-                <>
-                  <Spinner size="s" />
-                  <Text>Загружаем следующую подборку фильмов...</Text>
-                </>
-              ) : hasNextPage ? (
-                <Text>Прокрутите ниже, чтобы загрузить еще 50 фильмов.</Text>
-              ) : (
-                <Text>Все доступные фильмы уже загружены.</Text>
-              )}
+                <div className="catalog-footer">
+                  {isFetchingNextPage ? (
+                    <>
+                      <Spinner size="s" />
+                      <Text>Загружаем следующую подборку фильмов...</Text>
+                    </>
+                  ) : hasNextPage ? (
+                    <Text>
+                      Прокрутите ниже, чтобы показать еще {CATALOG_MOVIES_STEP}{' '}
+                      фильмов.
+                    </Text>
+                  ) : (
+                    <Text>Все доступные фильмы уже загружены.</Text>
+                  )}
                 </div>
               </>
             ) : null}

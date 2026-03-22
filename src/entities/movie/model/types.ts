@@ -17,12 +17,12 @@ export type MovieDetails = MovieCard & {
 }
 
 export type MovieFilterOption = {
-  id: number
+  id: string
   label: string
 }
 
 export type MovieFilters = {
-  genres: number[]
+  genres: string[]
   ratingFrom: number
   ratingTo: number
   yearFrom: number
@@ -34,6 +34,6 @@ export type MovieFilters = {
 
 export type MoviesPage = {
   items: MovieCard[]
-  total: number
-  totalPages: number
+  nextCursor: string | null
+  hasNextPage: boolean
 }
