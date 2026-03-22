@@ -42,19 +42,6 @@ function createSegmentKey(segment: CatalogSegment, order: MovieFilters['order'],
   })
 }
 
-function dedupeMovies(items: MovieCard[]) {
-  const seenIds = new Set<number>()
-
-  return items.filter((movie) => {
-    if (seenIds.has(movie.id)) {
-      return false
-    }
-
-    seenIds.add(movie.id)
-    return true
-  })
-}
-
 function isMovieMatchingFilters(movie: MovieCard, filters: CatalogSegment) {
   const matchesYear =
     movie.year !== null &&
@@ -141,19 +128,37 @@ export function createCatalogBatchFetcher(
     return pagePromise
   }
 
-  async function collectSegment(segment: CatalogSegment) {
+  async function collectSegmentUntil(
+    segment: CatalogSegment,
+    targetSize: number,
+  ) {
     const collectedItems: MovieCard[] = []
+    const collectedIds = new Set<number>()
     let isSaturated = false
 
     for (const order of explorationOrders) {
       for (let page = 1; page <= maxApiPages; page += 1) {
         const pageResult = await getPage(segment, order, page)
 
-        collectedItems.push(...pageResult.items)
-
         if (page === 1) {
-          isSaturated ||= 
+          isSaturated ||=
             pageResult.total >= saturationTotal && pageResult.totalPages >= maxApiPages
+        }
+
+        for (const movie of pageResult.items) {
+          if (!isMovieMatchingFilters(movie, segment) || collectedIds.has(movie.id)) {
+            continue
+          }
+
+          collectedIds.add(movie.id)
+          collectedItems.push(movie)
+
+          if (collectedItems.length >= targetSize) {
+            return {
+              isSaturated,
+              items: collectedItems,
+            }
+          }
         }
 
         if (page >= pageResult.totalPages || pageResult.items.length === 0) {
@@ -164,9 +169,7 @@ export function createCatalogBatchFetcher(
 
     return {
       isSaturated,
-      items: dedupeMovies(collectedItems).filter((movie) =>
-        isMovieMatchingFilters(movie, segment),
-      ),
+      items: collectedItems,
     }
   }
 
@@ -186,7 +189,10 @@ export function createCatalogBatchFetcher(
 
       processedSegments += 1
 
-      const segmentResult = await collectSegment(nextSegment)
+      const segmentResult = await collectSegmentUntil(
+        nextSegment,
+        Math.max(targetSize - bufferedItems.length, 1),
+      )
 
       for (const movie of segmentResult.items) {
         if (seenMovieIds.has(movie.id)) {
@@ -206,7 +212,7 @@ export function createCatalogBatchFetcher(
   return async function fetchCatalogBatch(
     cursor: CatalogBatchCursor = INITIAL_CATALOG_BATCH_CURSOR,
   ): Promise<CatalogBatchPage> {
-    const targetSize = cursor.index === 0 ? 1 : batchSize
+    const targetSize = batchSize
 
     await fillBuffer(targetSize)
 

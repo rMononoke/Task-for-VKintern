@@ -48,7 +48,7 @@
   color-scheme: dark;
   --page-background:
     radial-gradient(circle at top, rgba(79, 137, 255, 0.14), transparent 34%),
-    linear-gradient(180deg, #262b33 0%, #242a31 100%);
+    linear-gradient(180deg, #242a31 0%, #242a31 100%);
   --text-primary: #f5f7fb;
   --text-heading: #ffffff;
   --text-secondary: #dce6f5;
@@ -91,7 +91,9 @@ body,
 #root,
 .vkui,
 .vkui > body,
-.vkui__root {
+.vkui__root,
+.vkuiAppRoot__host,
+.vkuiAppRootStyleContainer__host {
   min-height: 100vh;
 }
 
@@ -112,6 +114,8 @@ body {
 .vkui,
 .vkui > body,
 .vkui__root,
+.vkuiAppRoot__host,
+.vkuiAppRootStyleContainer__host,
 .vkui--layout-card,
 .vkui--layout-plain {
   height: auto;
@@ -120,7 +124,9 @@ body {
 }
 
 .vkui,
-.vkui__root {
+.vkui__root,
+.vkuiAppRoot__host,
+.vkuiAppRootStyleContainer__host {
   background: transparent;
 }
 
