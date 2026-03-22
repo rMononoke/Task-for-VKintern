@@ -30,6 +30,8 @@ npm install
 
 2. Создайте файл `.env.local` на основе `.env.default`.
 
+Используемый API: https://poiskkino.dev/
+
 Пример:
 
 ```env
