@@ -1,7 +1,12 @@
+import { useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router'
 
 import { DEFAULT_MOVIE_FILTERS } from '@/entities/movie/model/constants'
 import type { MovieFilters } from '@/entities/movie/model/types'
+import {
+  readStoredCatalogSearch,
+  writeStoredCatalogSearch,
+} from '@/features/movie-filters/model/catalogSearchStorage'
 import {
   createMovieCatalogSearchParams,
   DEFAULT_CATALOG_FILTER_VALUES,
@@ -12,6 +17,32 @@ import {
 export function useMovieCatalogFilters() {
   const [searchParams, setSearchParams] = useSearchParams()
   const filterValues = parseMovieCatalogSearchParams(searchParams)
+  const serializedSearchParams = searchParams.toString()
+  const hasHydratedStoredSearch = useRef(false)
+
+  useEffect(() => {
+    if (serializedSearchParams !== '') {
+      writeStoredCatalogSearch(`?${serializedSearchParams}`)
+      hasHydratedStoredSearch.current = true
+      return
+    }
+
+    if (!hasHydratedStoredSearch.current) {
+      const storedSearch = readStoredCatalogSearch()
+
+      hasHydratedStoredSearch.current = true
+
+      if (storedSearch !== '') {
+        setSearchParams(new URLSearchParams(storedSearch), {
+          replace: true,
+        })
+      }
+
+      return
+    }
+
+    writeStoredCatalogSearch('')
+  }, [serializedSearchParams, setSearchParams])
 
   function updateFilterValues(nextValues: MovieCatalogFilterValues) {
     setSearchParams(createMovieCatalogSearchParams(nextValues), {

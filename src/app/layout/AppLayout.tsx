@@ -2,6 +2,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router'
 import { Button, Div, Text, Title } from '@vkontakte/vkui'
 
 import { useTheme } from '@/app/theme/model/useTheme'
+import { readStoredCatalogSearch } from '@/features/movie-filters/model/catalogSearchStorage'
 
 type NavigationItem = {
   label: string
@@ -17,6 +18,21 @@ export function AppLayout() {
   const location = useLocation()
   const navigate = useNavigate()
   const { isDark, toggleTheme } = useTheme()
+
+  function handleNavigate(to: string) {
+    if (to !== '/') {
+      navigate(to)
+      return
+    }
+
+    const search =
+      location.pathname === '/' ? location.search : readStoredCatalogSearch()
+
+    navigate({
+      pathname: to,
+      search,
+    })
+  }
 
   return (
     <div className="app-shell">
@@ -58,7 +74,7 @@ export function AppLayout() {
                 key={item.to}
                 mode={isActive ? 'primary' : 'secondary'}
                 size="m"
-                onClick={() => navigate(item.to)}
+                onClick={() => handleNavigate(item.to)}
               >
                 {item.label}
               </Button>

@@ -1,4 +1,4 @@
-import { useId, useState, type KeyboardEvent } from 'react'
+import { useEffect, useId, useState, type KeyboardEvent } from 'react'
 import { Button, Spinner, Text } from '@vkontakte/vkui'
 
 import type { MovieFilterOption } from '@/entities/movie/model/types'
@@ -96,6 +96,10 @@ function DraftNumberInput({
 }: DraftNumberInputProps) {
   const [draftValue, setDraftValue] = useState(String(value))
 
+  useEffect(() => {
+    setDraftValue(String(value))
+  }, [value])
+
   function commit() {
     const nextValue = parseCommittedNumber(draftValue, fallback, min, max)
 
@@ -106,6 +110,33 @@ function DraftNumberInput({
     }
   }
 
+  function handleChange(nextRawValue: string) {
+    const nextDraftValue = sanitize(nextRawValue)
+
+    setDraftValue(nextDraftValue)
+
+    if (nextDraftValue.trim() === '') {
+      if (value !== fallback) {
+        onCommit(fallback)
+      }
+
+      return
+    }
+
+    const parsedValue = Number(nextDraftValue)
+
+    if (
+      Number.isNaN(parsedValue) ||
+      parsedValue < min ||
+      parsedValue > max ||
+      parsedValue === value
+    ) {
+      return
+    }
+
+    onCommit(parsedValue)
+  }
+
   return (
     <label className="filter-field">
       <span className="filter-field__label">{label}</span>
@@ -114,7 +145,7 @@ function DraftNumberInput({
         type="text"
         inputMode={inputMode}
         value={draftValue}
-        onChange={(event) => setDraftValue(sanitize(event.currentTarget.value))}
+        onChange={(event) => handleChange(event.currentTarget.value)}
         onBlur={commit}
         onKeyDown={(event) => handleCommitByEnter(event, commit)}
       />
@@ -135,7 +166,7 @@ export function MovieFiltersPanel({
   onReset,
 }: MovieFiltersPanelProps) {
   const filtersBodyId = useId()
-  const [isCollapsed, setIsCollapsed] = useState(true)
+  const [isCollapsed, setIsCollapsed] = useState(activeFiltersCount === 0)
 
   return (
     <div className="filters-panel">
@@ -203,7 +234,6 @@ export function MovieFiltersPanel({
 
           <div className="filter-grid">
             <DraftNumberInput
-              key={`rating-from-${values.ratingFrom}`}
               label="Рейтинг от"
               value={values.ratingFrom}
               inputMode="decimal"
@@ -215,7 +245,6 @@ export function MovieFiltersPanel({
             />
 
             <DraftNumberInput
-              key={`rating-to-${values.ratingTo}`}
               label="Рейтинг до"
               value={values.ratingTo}
               inputMode="decimal"
@@ -227,7 +256,6 @@ export function MovieFiltersPanel({
             />
 
             <DraftNumberInput
-              key={`year-from-${values.yearFrom}`}
               label="Год от"
               value={values.yearFrom}
               inputMode="numeric"
@@ -239,7 +267,6 @@ export function MovieFiltersPanel({
             />
 
             <DraftNumberInput
-              key={`year-to-${values.yearTo}`}
               label="Год до"
               value={values.yearTo}
               inputMode="numeric"
